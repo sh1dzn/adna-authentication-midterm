@@ -1,0 +1,52 @@
+{
+  "permissive_bam": "results/bam/LVC005.A.permissive.bam",
+  "strict_bam": "results/bam/LVC005.A.strict.bam",
+  "min_mapq": 25,
+  "permissive": {
+    "reads_seen": 1044180,
+    "reads_mapped": 191546,
+    "reads_passing_mapq": 147349,
+    "mapping_rate": 0.18344155222279684,
+    "pass_rate": 0.14111455879254534,
+    "mean_mismatches": 0.32002931814942753,
+    "mismatch_histogram": {
+      "0": 119189,
+      "1": 17507,
+      "2": 5113,
+      "3": 3179,
+      "4": 1923,
+      "5": 434,
+      "6": 4
+    },
+    "damaged_fraction": 0.008137143787877759
+  },
+  "strict": {
+    "reads_seen": 1044180,
+    "reads_mapped": 178127,
+    "reads_passing_mapq": 144489,
+    "mapping_rate": 0.1705903196766841,
+    "pass_rate": 0.1383755674309027,
+    "mean_mismatches": 0.2519292126044197,
+    "mismatch_histogram": {
+      "0": 119173,
+      "1": 17492,
+      "2": 5091,
+      "3": 2205,
+      "4": 528
+    },
+    "damaged_fraction": 0.0070870446885230014
+  },
+  "reads_recovered_by_permissive_only": 3052,
+  "reads_shared": 144297,
+  "extra_yield_fraction": 0.019793894344898227,
+  "damaged_fraction_permissive_only": 0.05733944954128441,
+  "damaged_fraction_shared": 0.0070964746321822356,
+  "damage_enrichment_in_recovered_reads": 8.079990771932339,
+  "terminal_mismatches_recovered": 2098,
+  "terminal_mismatches_shared": 7679,
+  "damage_type_share_of_terminal_mismatches_recovered": 0.08436606291706387,
+  "damage_type_share_of_terminal_mismatches_shared": 0.13426227373355906,
+  "mean_length_permissive_only": 49.11631716906946,
+  "mean_length_shared": 55.22827917420321,
+  "interpretation": "damage_enrichment_in_recovered_reads is CONFOUNDED and should not be read as evidence of damage: it is large even for a modern library, because reads rescued by permissive alignment carry extra mismatches of every kind. The damage-specific quantity is damage_type_share_of_terminal_mismatches_*: a high share among recovered reads means strict alignment is discarding deaminated molecules; a share near the modern control's means it is discarding divergent ones."
+}

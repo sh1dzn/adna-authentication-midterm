@@ -1,0 +1,17 @@
+name: adna-midterm
+channels: [conda-forge, bioconda]
+dependencies:
+  - python=3.11
+  - snakemake-minimal>=8
+  - fastqc
+  - multiqc
+  - adapterremoval
+  - bwa
+  - samtools
+  - seqkit
+  - pysam
+  - pandas
+  - numpy
+  - matplotlib
+  - pyyaml
+  - requests

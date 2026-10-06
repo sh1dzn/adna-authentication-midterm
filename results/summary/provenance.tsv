@@ -1,0 +1,8 @@
+sample	run	collection_date	country	location	sample_title	library_construction_protocol	instrument_model	scientific_name	fields_populated	completeness
+TRP002.A	ERR3457840	(empty)	(empty)	(empty)	TRP002.A	Partial UDG-treatment	Illumina HiSeq 4000	Yersinia pestis	4/7	0.57
+LBG002.A	ERR3457603	(empty)	(empty)	(empty)	LBG002.A	Full UDG-treatment	NextSeq 500	Yersinia pestis	4/7	0.57
+LVC005.A	ERR3341198	(empty)	(empty)	(empty)	Metagenomic sample from human tooth containing Yersinia pestis (First Pandemic)	(empty)	NextSeq 500	Yersinia pestis	3/7	0.43
+LVC001.C	ERR3341142	(empty)	(empty)	(empty)	Metagenomic sample from human tooth containing Yersinia pestis (First Pandemic)	(empty)	Illumina HiSeq 4000	Yersinia pestis	3/7	0.43
+LP31b	SRR1048901	(empty)	(empty)	(empty)	Generic sample from Yersinia pestis	(empty)	Illumina HiSeq 1500	Yersinia pestis	3/7	0.43
+MOD1953	SRR10259775	1953-07-03	Russia: Chechnya	(empty)	Microbe sample from Yersinia pestis	(empty)	Illumina MiSeq	Yersinia pestis	5/7	0.71
+Motala1	ERR577492	(empty)	(empty)	(empty)	Motala1	(empty)	Illumina HiSeq 2000	Homo sapiens	3/7	0.43

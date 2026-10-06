@@ -1,0 +1,417 @@
+# Ancient DNA authentication pipeline - Project 23
+#
+# Run everything:        snakemake -s workflow/Snakefile --cores 4
+# Reproduce the headline: snakemake -s workflow/Snakefile --cores 4 authentication_table
+# Just the test sample:   snakemake -s workflow/Snakefile --cores 2 --config samples=config/samples_test.tsv
+#
+# Pipeline shape, and why it is this shape
+# ----------------------------------------
+#   fetch -> trim -> align(permissive) -> damage ----\
+#                 \                     \-> lengths --+-> summary
+#                  \-> align(strict) -----> refbias --/
+#
+# Every sample is processed identically, including the modern negative control.
+# That is the point: the control is only a control if the pipeline cannot tell
+# it apart from the ancient samples until the damage estimator runs.
+#
+# Alignment runs TWICE per sample - once with damage-aware permissive settings
+# and once with bwa's defaults - because task 6 asks us to analyse reference
+# bias, and that requires the comparison rather than an assertion about it.
+
+import csv
+
+configfile: "config/config.yaml"
+
+
+def load_samples(path):
+    rows = {}
+    with open(path) as fh:
+        for line in fh:
+            if line.startswith("#") or not line.strip():
+                continue
+            f = line.rstrip("\n").split("\t")
+            rows[f[0]] = {
+                "runs": f[1].split(";"),
+                "study": f[2],
+                "species": f[3],
+                "reference": f[4],
+                "layout": f[5],
+                "protocol": f[6],
+                "expect_damage": f[7],
+                "notes": f[8] if len(f) > 8 else "",
+            }
+    return rows
+
+
+SAMPLES = load_samples(config["samples"])
+REF = lambda w: f"data/ref/{SAMPLES[w.sample]['reference']}.fa"
+MAPQ = config["align"]["min_mapq"]
+DAMAGE_POS = config["damage"]["positions"]
+
+
+rule all:
+    input:
+        "results/summary/authentication_table.tsv",
+        "results/summary/authentication_report.md",
+        "results/summary/provenance.tsv",
+        "results/summary/runtime.tsv",
+        "results/figures/damage_profiles.png",
+        "results/figures/fragment_lengths.png",
+        "results/qc/multiqc_report.html",
+
+
+# ---------------------------------------------------------------- data retrieval
+
+rule fetch_run:
+    """Download one run from ENA, md5-verified by the fetch script."""
+    output:
+        touch("data/raw/.fetched_{run}")
+    log:
+        "logs/fetch/{run}.log",
+    shell:
+        # offline: the reads are already in data/raw (the committed test set)
+        ("touch {output}" if config.get("offline")
+         else "python scripts/fetch_ena.py download {wildcards.run} --out data/raw > {log} 2>&1")
+
+
+rule provenance:
+    """Audit how completely the archive documents each sample's origin (task 2)."""
+    input:
+        config["samples"]
+    output:
+        "results/summary/provenance.tsv"
+    log:
+        "logs/provenance.log"
+    shell:
+        "python scripts/fetch_ena.py provenance {input} --out {output} > {log} 2>&1"
+
+
+rule metadata:
+    output:
+        "results/summary/ena_metadata.tsv"
+    params:
+        runs=lambda w: " ".join(r for s in SAMPLES.values() for r in s["runs"])
+    log:
+        "logs/metadata.log"
+    shell:
+        "python scripts/fetch_ena.py metadata {params.runs} > {output} 2> {log}"
+
+
+# ------------------------------------------------------------------ read trimming
+
+def raw_r1(wildcards):
+    s = SAMPLES[wildcards.sample]
+    suffix = "_1" if s["layout"] == "PAIRED" else ""
+    return [f"data/raw/{r}{suffix}.fastq.gz" for r in s["runs"]]
+
+
+def raw_r2(wildcards):
+    s = SAMPLES[wildcards.sample]
+    if s["layout"] != "PAIRED":
+        return []
+    return [f"data/raw/{r}_2.fastq.gz" for r in s["runs"]]
+
+
+rule trim:
+    """Adapter and quality trimming with parameters adapted to short fragments (task 4).
+
+    Three deliberate departures from defaults, each of which would otherwise
+    destroy genuine ancient data:
+
+    --preserve5p      Quality trimming normally nibbles both termini. The 5'
+                      terminus is exactly where deamination concentrates, so
+                      default trimming would silently delete the signal task 7
+                      exists to measure. This is the single most important flag
+                      in the pipeline.
+    --min-length 25   Standard pipelines discard reads below 30-50 bp. An
+                      ancient library's modal fragment is ~50 bp with a long
+                      left tail, so a 50 bp floor throws away a large part of a
+                      real library. 25 bp is the point below which a read can no
+                      longer be placed uniquely in a 4.6 Mb genome.
+    --merge           Ancient fragments are usually SHORTER than the read
+                      length, so a paired-end run sequences the same molecule
+                      twice, from both ends. Collapsing those pairs into one
+                      consensus both corrects errors and makes read length a
+                      direct physical measurement of fragment length.
+    """
+    input:
+        r1=raw_r1,
+        r2=raw_r2,
+        fetched=lambda w: [f"data/raw/.fetched_{r}" for r in SAMPLES[w.sample]["runs"]],
+    output:
+        reads="results/trim/{sample}.reads.fastq.gz",
+        json="results/trim/{sample}.json",
+        html="results/trim/{sample}.html",
+    params:
+        prefix="results/trim/{sample}",
+        min_length=config["trim"]["min_length"],
+        mott=config["trim"]["mott_rate"],
+        paired=lambda w: SAMPLES[w.sample]["layout"] == "PAIRED",
+    threads: config["threads"]
+    benchmark:
+        "benchmarks/trim/{sample}.tsv"
+    log:
+        "logs/trim/{sample}.log",
+    shell:
+        r"""
+        set -euo pipefail
+        if [ "{params.paired}" = "True" ]; then
+            adapterremoval3 \
+                --in-file1 {input.r1} --in-file2 {input.r2} \
+                --out-prefix {params.prefix} --out-format fastq.gz \
+                --merge --merge-strategy maximum \
+                --min-length {params.min_length} --preserve5p \
+                --quality-trimming mott --trim-mott-rate {params.mott} \
+                --threads {threads} > {log} 2>&1
+            # Only collapsed pairs are carried forward: a pair that failed to
+            # overlap did not come from a short fragment, so it is either a long
+            # modern contaminant or an unreliable observation of fragment length.
+            mv {params.prefix}.merged.fastq.gz {output.reads}
+        else
+            adapterremoval3 \
+                --in-file1 {input.r1} \
+                --out-prefix {params.prefix} --out-format fastq.gz \
+                --min-length {params.min_length} --preserve5p \
+                --quality-trimming mott --trim-mott-rate {params.mott} \
+                --threads {threads} > {log} 2>&1
+            mv {params.prefix}.r1.fastq.gz {output.reads}
+        fi
+        """
+
+
+rule fastqc:
+    input:
+        "results/trim/{sample}.reads.fastq.gz"
+    output:
+        "results/qc/{sample}.reads_fastqc.zip"
+    threads: 2
+    log:
+        "logs/fastqc/{sample}.log"
+    shell:
+        "fastqc --outdir results/qc -t {threads} {input} > {log} 2>&1"
+
+
+rule multiqc:
+    input:
+        expand("results/qc/{sample}.reads_fastqc.zip", sample=SAMPLES),
+        expand("results/trim/{sample}.json", sample=SAMPLES),
+    output:
+        "results/qc/multiqc_report.html"
+    log:
+        "logs/multiqc.log"
+    shell:
+        "multiqc -f -o results/qc results/qc results/trim > {log} 2>&1"
+
+
+# --------------------------------------------------------------------- alignment
+
+rule bwa_index:
+    input:
+        "data/ref/{ref}.fa"
+    output:
+        "data/ref/{ref}.fa.bwt",
+        "data/ref/{ref}.fa.fai",
+    log:
+        "logs/bwa_index/{ref}.log"
+    shell:
+        "bwa index {input} > {log} 2>&1 && samtools faidx {input}"
+
+
+rule align_permissive:
+    """Damage-aware alignment. See scripts/reference_bias.py for why these flags."""
+    input:
+        reads="results/trim/{sample}.reads.fastq.gz",
+        ref=REF,
+        idx=lambda w: f"data/ref/{SAMPLES[w.sample]['reference']}.fa.bwt",
+    output:
+        bam="results/bam/{sample}.permissive.bam",
+        bai="results/bam/{sample}.permissive.bam.bai",
+    params:
+        aln=config["align"]["permissive_args"]
+    threads: config["threads"]
+    benchmark:
+        "benchmarks/align_permissive/{sample}.tsv"
+    log:
+        "logs/align/{sample}.permissive.log"
+    shell:
+        r"""
+        bwa aln {params.aln} -t {threads} {input.ref} {input.reads} 2> {log} \
+          | bwa samse {input.ref} - {input.reads} 2>> {log} \
+          | samtools sort -@ 2 -o {output.bam} 2>> {log}
+        samtools index {output.bam}
+        """
+
+
+rule align_strict:
+    """bwa defaults, kept only as the comparison for the reference-bias analysis."""
+    input:
+        reads="results/trim/{sample}.reads.fastq.gz",
+        ref=REF,
+        idx=lambda w: f"data/ref/{SAMPLES[w.sample]['reference']}.fa.bwt",
+    output:
+        bam="results/bam/{sample}.strict.bam",
+        bai="results/bam/{sample}.strict.bam.bai",
+    threads: config["threads"]
+    benchmark:
+        "benchmarks/align_strict/{sample}.tsv"
+    log:
+        "logs/align/{sample}.strict.log"
+    shell:
+        r"""
+        bwa aln -t {threads} {input.ref} {input.reads} 2> {log} \
+          | bwa samse {input.ref} - {input.reads} 2>> {log} \
+          | samtools sort -@ 2 -o {output.bam} 2>> {log}
+        samtools index {output.bam}
+        """
+
+
+rule flagstat:
+    input:
+        "results/bam/{sample}.{mode}.bam"
+    output:
+        "results/bam/{sample}.{mode}.flagstat"
+    shell:
+        "samtools flagstat {input} > {output}"
+
+
+# --------------------------------------------------------------- authentication
+
+rule damage:
+    """Measure the deamination profile at fragment ends (task 7)."""
+    input:
+        bam="results/bam/{sample}.permissive.bam",
+        bai="results/bam/{sample}.permissive.bam.bai",
+        ref=REF,
+    output:
+        json="results/damage/{sample}.json",
+        tsv="results/damage/{sample}.misincorporation.tsv",
+    params:
+        prefix="results/damage/{sample}",
+        positions=DAMAGE_POS,
+    benchmark:
+        "benchmarks/damage/{sample}.tsv"
+    log:
+        "logs/damage/{sample}.log"
+    shell:
+        "python scripts/damage_profile.py {input.bam} {input.ref} "
+        "--out {params.prefix} --length {params.positions} --min-mapq %d > {log} 2>&1" % MAPQ
+
+
+rule lengths:
+    """Fragment length distribution and the long-read argument (task 5)."""
+    input:
+        bam="results/bam/{sample}.permissive.bam",
+        bai="results/bam/{sample}.permissive.bam.bai",
+        damage="results/damage/{sample}.json",
+    output:
+        json="results/lengths/{sample}.json",
+        tsv="results/lengths/{sample}.histogram.tsv",
+    params:
+        prefix="results/lengths/{sample}"
+    benchmark:
+        "benchmarks/lengths/{sample}.tsv"
+    log:
+        "logs/lengths/{sample}.log"
+    shell:
+        r"""
+        DELTA=$(python -c "import json;print(json.load(open('{input.damage}'))['summary']['ct_5p']['delta'])")
+        python scripts/fragment_lengths.py {input.bam} --out {params.prefix} \
+            --min-mapq %d --ct-delta $DELTA > {log} 2>&1
+        """ % MAPQ
+
+
+rule authenticate:
+    """Endogenous content and contamination fraction (task 8)."""
+    input:
+        bam="results/bam/{sample}.permissive.bam",
+        bai="results/bam/{sample}.permissive.bam.bai",
+        ref=REF,
+        flagstat="results/bam/{sample}.permissive.flagstat",
+        trim="results/trim/{sample}.json",
+        reads="results/trim/{sample}.reads.fastq.gz",
+    output:
+        "results/auth/{sample}.json"
+    params:
+        prefix="results/auth/{sample}",
+        d_ref=config["authenticate"]["d_ref"],
+        window=config["authenticate"]["terminal_window"],
+        layout=lambda w: SAMPLES[w.sample]["layout"],
+    benchmark:
+        "benchmarks/authenticate/{sample}.tsv"
+    log:
+        "logs/auth/{sample}.log"
+    shell:
+        "python scripts/authenticate.py --bam {input.bam} --ref {input.ref} "
+        "--flagstat {input.flagstat} --trim-json {input.trim} "
+        "--reads-fastq {input.reads} --layout {params.layout} "
+        "--out {params.prefix} --min-mapq %d --d-ref {params.d_ref} "
+        "--window {params.window} > {log} 2>&1" % MAPQ
+
+
+rule reference_bias:
+    """Compare permissive against default alignment (task 6)."""
+    input:
+        perm="results/bam/{sample}.permissive.bam",
+        strict="results/bam/{sample}.strict.bam",
+        pbai="results/bam/{sample}.permissive.bam.bai",
+        sbai="results/bam/{sample}.strict.bam.bai",
+        ref=REF,
+    output:
+        "results/refbias/{sample}.json"
+    params:
+        prefix="results/refbias/{sample}"
+    benchmark:
+        "benchmarks/reference_bias/{sample}.tsv"
+    log:
+        "logs/refbias/{sample}.log"
+    shell:
+        "python scripts/reference_bias.py --permissive {input.perm} "
+        "--strict {input.strict} --ref {input.ref} --out {params.prefix} "
+        "--min-mapq %d > {log} 2>&1" % MAPQ
+
+
+# -------------------------------------------------------------------- reporting
+
+rule authentication_table:
+    """The deliverable: one row per sample, with the verdict."""
+    input:
+        samples=config["samples"],
+        damage=expand("results/damage/{sample}.json", sample=SAMPLES),
+        lengths=expand("results/lengths/{sample}.json", sample=SAMPLES),
+        auth=expand("results/auth/{sample}.json", sample=SAMPLES),
+        refbias=expand("results/refbias/{sample}.json", sample=SAMPLES),
+    output:
+        tsv="results/summary/authentication_table.tsv",
+        md="results/summary/authentication_report.md",
+        json="results/summary/summary.json",
+    log:
+        "logs/summary.log"
+    shell:
+        "python scripts/summarize.py --samples {input.samples} "
+        "--out results/summary > {log} 2>&1"
+
+
+rule runtime:
+    """Aggregate per-step wall time and peak memory (rubric: measure resource use)."""
+    input:
+        expand("results/auth/{sample}.json", sample=SAMPLES),
+        expand("results/refbias/{sample}.json", sample=SAMPLES),
+    output:
+        "results/summary/runtime.tsv"
+    shell:
+        "python scripts/benchmarks.py benchmarks > {output}"
+
+
+rule figures:
+    input:
+        damage=expand("results/damage/{sample}.json", sample=SAMPLES),
+        lengths=expand("results/lengths/{sample}.json", sample=SAMPLES),
+        samples=config["samples"],
+    output:
+        damage="results/figures/damage_profiles.png",
+        lengths="results/figures/fragment_lengths.png",
+    log:
+        "logs/figures.log"
+    shell:
+        "python scripts/plots.py --samples {input.samples} "
+        "--out results/figures > {log} 2>&1"

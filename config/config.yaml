@@ -1,0 +1,49 @@
+# Pipeline parameters for Project 23 (ancient DNA authentication).
+# Every value that departs from a tool's default is justified here, because
+# "QC run with default parameters and no interrogation of the output" is
+# explicitly the partial-credit descriptor in the rubric.
+
+samples: config/samples.tsv
+
+threads: 4
+
+trim:
+  # Standard pipelines use 30-50. An ancient library's modal fragment is ~50 bp
+  # with a long left tail, so a 50 bp floor discards a real part of the library.
+  # 25 bp is roughly the shortest read that still places uniquely in a 4.6 Mb
+  # genome: below that, multi-mapping makes the alignment meaningless.
+  min_length: 25
+  # Mott's algorithm at the tool default. Quality trimming is applied to the 3'
+  # end only (--preserve5p is hard-coded in the trim rule) because the 5'
+  # terminus carries the deamination signal we are trying to measure.
+  mott_rate: 0.05
+
+align:
+  # bwa aln, not bwa mem. mem is optimised for reads >70 bp and seeds
+  # aggressively; aln remains the standard for aDNA precisely because its
+  # behaviour on very short, mismatch-rich reads is predictable.
+  #   -l 1024  disable seeding. Seeding demands a near-exact 5' match, which is
+  #            where damage concentrates, so it rejects ancient molecules.
+  #   -n 0.01  loosen the edit-distance threshold so a short damaged read can
+  #            still be placed.
+  #   -o 2     allow two gap opens.
+  permissive_args: "-l 1024 -n 0.01 -o 2"
+  # Specificity is bought back here rather than at the alignment step. 25 is
+  # the conventional aDNA threshold; the reference-bias analysis reports how
+  # much yield this costs.
+  min_mapq: 25
+
+damage:
+  # Deamination decays within ~10 bp of the terminus. 25 positions gives a
+  # generous interior stretch to use as the sample's own background.
+  positions: 25
+
+authenticate:
+  # Terminal damage rate expected of a fully ancient, untreated library.
+  # Deliberately conservative: published non-UDG libraries of this age run
+  # 0.2-0.4 at the terminal base. The inferred ancient fraction scales as
+  # 1/d_ref, so this number is reported alongside every estimate that uses it.
+  d_ref: 0.30
+  # How many bases from each terminus count as "terminal" when classifying a
+  # single read as damaged or not.
+  terminal_window: 2

@@ -1,0 +1,52 @@
+{
+  "permissive_bam": "results/bam/TRP002.A.permissive.bam",
+  "strict_bam": "results/bam/TRP002.A.strict.bam",
+  "min_mapq": 25,
+  "permissive": {
+    "reads_seen": 6737837,
+    "reads_mapped": 1569014,
+    "reads_passing_mapq": 1312882,
+    "mapping_rate": 0.2328661260282788,
+    "pass_rate": 0.19485214617094476,
+    "mean_mismatches": 0.21889933748806062,
+    "mismatch_histogram": {
+      "0": 1108438,
+      "1": 158461,
+      "2": 19569,
+      "3": 16371,
+      "4": 9542,
+      "5": 497,
+      "6": 4
+    },
+    "damaged_fraction": 0.07689723828950355
+  },
+  "strict": {
+    "reads_seen": 6737837,
+    "reads_mapped": 1495786,
+    "reads_passing_mapq": 1293881,
+    "mapping_rate": 0.2219979497871498,
+    "pass_rate": 0.19203210169673146,
+    "mean_mismatches": 0.17044535007469774,
+    "mismatch_histogram": {
+      "0": 1108432,
+      "1": 158327,
+      "2": 19453,
+      "3": 7373,
+      "4": 296
+    },
+    "damaged_fraction": 0.07701944769263944
+  },
+  "reads_recovered_by_permissive_only": 19768,
+  "reads_shared": 1293114,
+  "extra_yield_fraction": 0.014685276312118347,
+  "damaged_fraction_permissive_only": 0.06986038041278834,
+  "damaged_fraction_shared": 0.07700481164073701,
+  "damage_enrichment_in_recovered_reads": 0.9072209765114323,
+  "terminal_mismatches_recovered": 14140,
+  "terminal_mismatches_shared": 123074,
+  "damage_type_share_of_terminal_mismatches_recovered": 0.10353606789250354,
+  "damage_type_share_of_terminal_mismatches_shared": 0.8213838828672181,
+  "mean_length_permissive_only": 42.644425333872924,
+  "mean_length_shared": 44.150641010769355,
+  "interpretation": "damage_enrichment_in_recovered_reads is CONFOUNDED and should not be read as evidence of damage: it is large even for a modern library, because reads rescued by permissive alignment carry extra mismatches of every kind. The damage-specific quantity is damage_type_share_of_terminal_mismatches_*: a high share among recovered reads means strict alignment is discarding deaminated molecules; a share near the modern control's means it is discarding divergent ones."
+}

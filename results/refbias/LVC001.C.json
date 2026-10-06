@@ -1,0 +1,51 @@
+{
+  "permissive_bam": "results/bam/LVC001.C.permissive.bam",
+  "strict_bam": "results/bam/LVC001.C.strict.bam",
+  "min_mapq": 25,
+  "permissive": {
+    "reads_seen": 3848374,
+    "reads_mapped": 268823,
+    "reads_passing_mapq": 151585,
+    "mapping_rate": 0.06985365767464388,
+    "pass_rate": 0.03938936288416874,
+    "mean_mismatches": 0.32922782597222683,
+    "mismatch_histogram": {
+      "0": 130686,
+      "1": 6417,
+      "2": 3956,
+      "3": 6677,
+      "4": 3699,
+      "5": 150
+    },
+    "damaged_fraction": 0.006029620345020945
+  },
+  "strict": {
+    "reads_seen": 3848374,
+    "reads_mapped": 236313,
+    "reads_passing_mapq": 143182,
+    "mapping_rate": 0.061405934038635535,
+    "pass_rate": 0.03720584329901408,
+    "mean_mismatches": 0.1460239415568996,
+    "mismatch_histogram": {
+      "0": 130677,
+      "1": 6390,
+      "2": 3874,
+      "3": 2194,
+      "4": 47
+    },
+    "damaged_fraction": 0.0034780908214719726
+  },
+  "reads_recovered_by_permissive_only": 8794,
+  "reads_shared": 142791,
+  "extra_yield_fraction": 0.05868754452375299,
+  "damaged_fraction_permissive_only": 0.05003411416875142,
+  "damaged_fraction_shared": 0.0033195369456058155,
+  "damage_enrichment_in_recovered_reads": 15.072618557532033,
+  "terminal_mismatches_recovered": 5738,
+  "terminal_mismatches_shared": 4615,
+  "damage_type_share_of_terminal_mismatches_recovered": 0.07790170791216451,
+  "damage_type_share_of_terminal_mismatches_shared": 0.10314192849404118,
+  "mean_length_permissive_only": 40.710825562883784,
+  "mean_length_shared": 46.637140996281275,
+  "interpretation": "damage_enrichment_in_recovered_reads is CONFOUNDED and should not be read as evidence of damage: it is large even for a modern library, because reads rescued by permissive alignment carry extra mismatches of every kind. The damage-specific quantity is damage_type_share_of_terminal_mismatches_*: a high share among recovered reads means strict alignment is discarding deaminated molecules; a share near the modern control's means it is discarding divergent ones."
+}

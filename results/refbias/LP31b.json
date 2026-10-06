@@ -1,0 +1,52 @@
+{
+  "permissive_bam": "results/bam/LP31b.permissive.bam",
+  "strict_bam": "results/bam/LP31b.strict.bam",
+  "min_mapq": 25,
+  "permissive": {
+    "reads_seen": 255663,
+    "reads_mapped": 6292,
+    "reads_passing_mapq": 4617,
+    "mapping_rate": 0.024610522445563103,
+    "pass_rate": 0.018058929137184498,
+    "mean_mismatches": 0.9142300194931774,
+    "mismatch_histogram": {
+      "0": 2692,
+      "1": 685,
+      "2": 423,
+      "3": 596,
+      "4": 204,
+      "5": 16,
+      "6": 1
+    },
+    "damaged_fraction": 0.010179770413688543
+  },
+  "strict": {
+    "reads_seen": 255663,
+    "reads_mapped": 5285,
+    "reads_passing_mapq": 4020,
+    "mapping_rate": 0.020671743662555787,
+    "pass_rate": 0.01572382394010866,
+    "mean_mismatches": 0.5437810945273632,
+    "mismatch_histogram": {
+      "0": 2687,
+      "1": 689,
+      "2": 443,
+      "3": 193,
+      "4": 8
+    },
+    "damaged_fraction": 0.006218905472636816
+  },
+  "reads_recovered_by_permissive_only": 722,
+  "reads_shared": 3895,
+  "extra_yield_fraction": 0.14850746268656717,
+  "damaged_fraction_permissive_only": 0.03185595567867036,
+  "damaged_fraction_shared": 0.0061617458279845955,
+  "damage_enrichment_in_recovered_reads": 5.169956140350878,
+  "terminal_mismatches_recovered": 527,
+  "terminal_mismatches_shared": 342,
+  "damage_type_share_of_terminal_mismatches_recovered": 0.04364326375711575,
+  "damage_type_share_of_terminal_mismatches_shared": 0.07017543859649122,
+  "mean_length_permissive_only": 38.566481994459835,
+  "mean_length_shared": 58.13966623876765,
+  "interpretation": "damage_enrichment_in_recovered_reads is CONFOUNDED and should not be read as evidence of damage: it is large even for a modern library, because reads rescued by permissive alignment carry extra mismatches of every kind. The damage-specific quantity is damage_type_share_of_terminal_mismatches_*: a high share among recovered reads means strict alignment is discarding deaminated molecules; a share near the modern control's means it is discarding divergent ones."
+}

@@ -1,0 +1,31 @@
+# Sample sheet - Project 23, ancient DNA authentication
+# Verified against ENA 2026-10-06. Tab-separated. One row per sample;
+# `runs` is a semicolon-separated list of runs merged into that sample.
+#
+# The design is a CONTRAST. Task 7 asks us to distinguish genuinely ancient
+# molecules from modern contamination, and a pipeline that reports "damage
+# found" on one ancient sample has demonstrated nothing. Each sample below has
+# a different EXPECTED damage signal, so the estimator is tested against cases
+# where it must fire and cases where it must stay silent:
+#
+#   undeclared  -> ancient, protocol NOT stated in ENA   -> no expectation; the data tell us
+#   partial_udg -> ancient, interior uracils excised -> expect spike confined to terminal base
+#   full_udg    -> ancient, all uracils excised      -> expect FLAT (biological negative)
+#   modern      -> never ancient                     -> expect FLAT (true negative)
+#
+# Protocol labels come from ENA's library_construction_protocol field. Only the
+# two plague capture studies declare one; for the rest it is empty, so we do not
+# assume a protocol and instead report what the damage profile itself implies.
+#
+# If the estimator fires on `modern`, the estimator is broken. If it fires on
+# `full_udg`, we have confused a lab protocol for antiquity. The partial_udg
+# case is the sharpest test, because its damage is real but confined to one base.
+#
+# sample	runs	study	species	reference	layout	protocol	expect_damage	notes
+TRP002.A	ERR3457840;ERR3457841	PRJEB29990	ypestis	ypestis_co92	SINGLE	partial_udg	terminal_only	2nd pandemic plague victim, capture
+LBG002.A	ERR3457603;ERR3457605	PRJEB29990	ypestis	ypestis_co92	SINGLE	full_udg	none	2nd pandemic plague victim, capture; damage removed in lab
+LVC005.A	ERR3341198;ERR3341197;ERR3341201;ERR3341200	PRJEB29991	ypestis	ypestis_co92	SINGLE	undeclared	unknown	1st pandemic (Justinianic) plague victim, WGS
+LVC001.C	ERR3341142	PRJEB29991	ypestis	ypestis_co92	PAIRED	undeclared	unknown	1st pandemic; PAIRED, for the read-collapsing demonstration
+LP31b	SRR1048901	PRJNA231474	ypestis	ypestis_co92	PAIRED	undeclared	unknown	Justinian-era historic sample (study PRJNA231474, Wagner 2014); mislabelled 'modern' in an earlier draft, merge rate and 55 bp fragments show it is ancient
+MOD1953	SRR10259775	PRJNA269675	ypestis	ypestis_co92	PAIRED	modern	none	modern isolate, ENA collection_date 1953, MiSeq; true negative control
+Motala1	ERR577492	PRJEB6272	human	human_rCRS	SINGLE	undeclared	unknown	Mesolithic Sweden (Lazaridis 2014), shotgun -> mtDNA

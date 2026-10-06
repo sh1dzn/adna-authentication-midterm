@@ -1,0 +1,5 @@
+step	input	peak_rss
+adapterremoval3 trim	TRP002.A (6.7M reads)	63 MB
+bwa aln (permissive)	TRP002.A (1.1M reads)	804 MB
+damage_profile.py	TRP002.A (1.3M mapped)	30 MB
+damage_profile.py	MOD1953 (0.5M mapped)	32 MB

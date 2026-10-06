@@ -1,0 +1,52 @@
+{
+  "permissive_bam": "results/bam/LBG002.A.permissive.bam",
+  "strict_bam": "results/bam/LBG002.A.strict.bam",
+  "min_mapq": 25,
+  "permissive": {
+    "reads_seen": 888845,
+    "reads_mapped": 284242,
+    "reads_passing_mapq": 248802,
+    "mapping_rate": 0.319788039534452,
+    "pass_rate": 0.2799160708559985,
+    "mean_mismatches": 0.2689930145256067,
+    "mismatch_histogram": {
+      "0": 206102,
+      "1": 28522,
+      "2": 7764,
+      "3": 3559,
+      "4": 2077,
+      "5": 777,
+      "6": 1
+    },
+    "damaged_fraction": 0.0046663612028842215
+  },
+  "strict": {
+    "reads_seen": 888845,
+    "reads_mapped": 276122,
+    "reads_passing_mapq": 246355,
+    "mapping_rate": 0.3106525884715558,
+    "pass_rate": 0.27716305992608387,
+    "mean_mismatches": 0.2310771041789288,
+    "mismatch_histogram": {
+      "0": 206108,
+      "1": 28520,
+      "2": 7762,
+      "3": 2977,
+      "4": 988
+    },
+    "damaged_fraction": 0.004331148139879442
+  },
+  "reads_recovered_by_permissive_only": 2527,
+  "reads_shared": 246275,
+  "extra_yield_fraction": 0.009932820523228674,
+  "damaged_fraction_permissive_only": 0.03561535417491096,
+  "damaged_fraction_shared": 0.00434879707643894,
+  "damage_enrichment_in_recovered_reads": 8.1897024737873,
+  "terminal_mismatches_recovered": 1533,
+  "terminal_mismatches_shared": 11006,
+  "damage_type_share_of_terminal_mismatches_recovered": 0.05870841487279843,
+  "damage_type_share_of_terminal_mismatches_shared": 0.09731055787752135,
+  "mean_length_permissive_only": 57.91175306687772,
+  "mean_length_shared": 57.14027814435083,
+  "interpretation": "damage_enrichment_in_recovered_reads is CONFOUNDED and should not be read as evidence of damage: it is large even for a modern library, because reads rescued by permissive alignment carry extra mismatches of every kind. The damage-specific quantity is damage_type_share_of_terminal_mismatches_*: a high share among recovered reads means strict alignment is discarding deaminated molecules; a share near the modern control's means it is discarding divergent ones."
+}

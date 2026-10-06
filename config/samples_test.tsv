@@ -1,0 +1,7 @@
+# Test sample sheet: the first reads of three real runs, one per damage regime.
+# Runs fast (~1-2 min) and must reproduce the qualitative result of the full run:
+# TRP002 ANCIENT, LBG002 UDG-treated/untestable, MOD1953 modern-as-expected.
+# sample	runs	study	species	reference	layout	protocol	expect_damage	notes
+TRP002.A	TRP002_test	PRJEB29990	ypestis	ypestis_co92	SINGLE	partial_udg	terminal_only	first 60k reads of ERR3457840
+LBG002.A	LBG002_test	PRJEB29990	ypestis	ypestis_co92	SINGLE	full_udg	none	first 60k reads of ERR3457603
+MOD1953	MOD1953_test	PRJNA269675	ypestis	ypestis_co92	PAIRED	modern	none	first 8k pairs of SRR10259775

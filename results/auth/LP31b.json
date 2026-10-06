@@ -1,0 +1,29 @@
+{
+  "bam": "results/bam/LP31b.permissive.bam",
+  "endogenous": {
+    "reads_total": 255663,
+    "reads_mapped": 6292,
+    "endogenous_fraction": 0.024610522445563103,
+    "duplicates": 0,
+    "duplicate_fraction": 0.0
+  },
+  "trimming": {
+    "reads_input": 558950,
+    "reads_output_all": 279598,
+    "input_mean_length": 80.0,
+    "reads_after_trim": 255663,
+    "read_pairs": 279475.0,
+    "merge_rate": 0.914797387959567
+  },
+  "damage_partition": {
+    "reads_assessed": 4617,
+    "window_bases": 2,
+    "fraction_with_5p_CT": 0.007364089235434265,
+    "fraction_with_3p_GA": 0.0028156811782542777,
+    "fraction_with_any_terminal_damage": 0.010179770413688543,
+    "d_ref_assumed": 0.3,
+    "inferred_ancient_fraction": 0.033932568045628476,
+    "inferred_modern_contamination": 0.9660674319543715,
+    "caveat": "A UDG-treated library has no terminal uracil left to detect, so a low damaged fraction here means 'damage removed in the lab' and NOT 'modern contamination'. Read this number together with the library protocol recorded in the sample sheet."
+  }
+}

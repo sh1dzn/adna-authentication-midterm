@@ -1,0 +1,29 @@
+# Environment and scratch
+.env/
+.snakemake/
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+logs/
+run_*.log
+nohup.out
+
+# Raw data and references are fetched by scripts, never committed
+data/raw/*
+data/ref/*
+!data/**/.gitkeep
+
+# Large intermediates; small result tables and figures are kept
+results/*
+!results/.gitkeep
+!results/summary/
+!results/figures/
+!results/damage/
+!results/lengths/
+!results/refbias/
+!results/auth/
+results/summary/*.bak
+*.bam
+*.bai
+*.fastq.gz
+!data/test/*.fastq.gz
